@@ -23,7 +23,8 @@ const WORDS = {
 const LANG_KEYS = ['en','ru','ja','es','de'];
 const LANG_LABELS = ['EN','RU','JA','ES','DE'];
 const NUM_COLORS = 8;
-const NUM_WORDS = 120;
+// Меньше слов на мобильных устройствах для производительности
+const NUM_WORDS = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 60 : 120;
 const GLITCH_CHARS = '!@#$%^&*█▓▒░╔╗╚╝╠╣╦╩╬│─┼▀▄■□◆◇○●※∴∞≈≠±×÷';
 
 let currentLangIdx = 0;
@@ -345,7 +346,8 @@ class PixelDude {
   setupDragHandlers() {
     this.el.style.cursor = 'grab';
 
-    this.el.addEventListener('mousedown', (e) => {
+    // Универсальная функция для начала перетаскивания
+    const startDrag = (clientX, clientY) => {
       if (this.dead || this.isFallingFromGlitch) return;
 
       this.isDragging = true;
@@ -359,9 +361,9 @@ class PixelDude {
       const handOffsetX = (SW * PX) / 2;
       const handOffsetY = 0;
 
-      // Рука прилипает к курсору
-      this.handX = e.clientX;
-      this.handY = e.clientY;
+      // Рука прилипает к курсору/пальцу
+      this.handX = clientX;
+      this.handY = clientY;
 
       // Вычисляем где должен быть персонаж чтобы рука была на курсоре
       this.dragOffsetX = handOffsetX;
@@ -374,21 +376,19 @@ class PixelDude {
       this.vy = 0;
       this.dragVelocityX = 0;
       this.dragVelocityY = 0;
+    };
 
-      e.preventDefault();
-    });
-
-    document.addEventListener('mousemove', (e) => {
+    // Универсальная функция для движения
+    const moveDrag = (clientX, clientY) => {
       if (!this.isDragging) return;
 
-      // Рука мгновенно следует за курсором
-      this.handX = e.clientX;
-      this.handY = e.clientY;
+      // Рука мгновенно следует за курсором/пальцем
+      this.handX = clientX;
+      this.handY = clientY;
+    };
 
-      e.preventDefault();
-    });
-
-    document.addEventListener('mouseup', (e) => {
+    // Универсальная функция для окончания перетаскивания
+    const endDrag = () => {
       if (!this.isDragging) return;
 
       this.isDragging = false;
@@ -412,7 +412,7 @@ class PixelDude {
 
         // Вертикальная инерция: если движение вверх - применяем дополнительный множитель
         if (this.dragVelocityY < 0) {
-          // Движение ВВЕРХ - применяем специальный множитель (строка 205)
+          // Движение ВВЕРХ - применяем специальный множитель (строка 208)
           this.vy = this.dragVelocityY * inertiaMultiplier * this._verticalUpInertiaMultiplier;
         } else {
           // Движение ВНИЗ - применяем обычную инерцию
@@ -429,9 +429,48 @@ class PixelDude {
         this.vy = 0;
         this.draw(FR_FALL);
       }
+    };
 
+    // ===== MOUSE СОБЫТИЯ =====
+    this.el.addEventListener('mousedown', (e) => {
+      startDrag(e.clientX, e.clientY);
       e.preventDefault();
     });
+
+    document.addEventListener('mousemove', (e) => {
+      moveDrag(e.clientX, e.clientY);
+      if (this.isDragging) e.preventDefault();
+    });
+
+    document.addEventListener('mouseup', (e) => {
+      endDrag();
+      if (this.isDragging) e.preventDefault();
+    });
+
+    // ===== TOUCH СОБЫТИЯ (для телефона) =====
+    this.el.addEventListener('touchstart', (e) => {
+      if (e.touches.length > 0) {
+        startDrag(e.touches[0].clientX, e.touches[0].clientY);
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    document.addEventListener('touchmove', (e) => {
+      if (e.touches.length > 0) {
+        moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+        if (this.isDragging) e.preventDefault();
+      }
+    }, { passive: false });
+
+    document.addEventListener('touchend', (e) => {
+      endDrag();
+      if (this.isDragging) e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('touchcancel', (e) => {
+      endDrag();
+      if (this.isDragging) e.preventDefault();
+    }, { passive: false });
   }
 
   update(dt) {
