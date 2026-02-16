@@ -24,7 +24,7 @@ const LANG_KEYS = ['en','ru','ja','es','de'];
 const LANG_LABELS = ['EN','RU','JA','ES','DE'];
 const NUM_COLORS = 8;
 // Меньше слов на мобильных устройствах для производительности
-const NUM_WORDS = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 60 : 120;
+const NUM_WORDS = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? 30 : 120;
 const GLITCH_CHARS = '!@#$%^&*█▓▒░╔╗╚╝╠╣╦╩╬│─┼▀▄■□◆◇○●※∴∞≈≠±×÷';
 
 let currentLangIdx = 0;
